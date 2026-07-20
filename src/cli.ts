@@ -1,10 +1,7 @@
 /* eslint-disable no-console */
 import {generateReport} from './report/generateReport';
-import {
-  ReportFormat,
-  serialize,
-  writeReportToFile,
-} from './report/writeReport';
+import {ReportFormat, serialize} from './report/writeReport';
+import {writeReportToFile} from './report/nodeFs';
 import {Region, REGION_LABELS} from './providers/types';
 import {SIMULATION_PROFILES} from './simulation';
 
