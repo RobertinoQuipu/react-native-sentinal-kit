@@ -41,11 +41,25 @@ interface DeviceInfoApi {
   isEmulatorSync?(): boolean;
 }
 
-function tryRequire<T>(name: string): T | null {
+/**
+ * Loads jail-monkey. Metro/React Native only bundle `require()` calls with a
+ * STRING LITERAL argument, so we must not use a dynamic variable here.
+ */
+function loadJailMonkey(): JailMonkeyApi | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = require(name);
-    return (mod?.default ?? mod) as T;
+    const mod = require('jail-monkey');
+    return (mod?.default ?? mod) as JailMonkeyApi;
+  } catch {
+    return null;
+  }
+}
+
+function loadDeviceInfo(): DeviceInfoApi | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require('react-native-device-info');
+    return (mod?.default ?? mod) as DeviceInfoApi;
   } catch {
     return null;
   }
@@ -64,12 +78,13 @@ async function toBool(v: unknown): Promise<boolean> {
  * meaning a live scan will produce meaningful data.
  */
 export function hasLiveSignals(): boolean {
-  return tryRequire<JailMonkeyApi>('jail-monkey') != null;
+  const jm = loadJailMonkey();
+  return jm != null && typeof jm.isJailBroken === 'function';
 }
 
 export async function collectLiveReport(): Promise<SecurityReport> {
-  const jm = tryRequire<JailMonkeyApi>('jail-monkey');
-  const deviceInfo = tryRequire<DeviceInfoApi>('react-native-device-info');
+  const jm = loadJailMonkey();
+  const deviceInfo = loadDeviceInfo();
 
   const isIOS = Platform.OS === 'ios';
 
