@@ -20,9 +20,7 @@ export function toMarkdown(report: FullReport): string {
   lines.push(`- **Generated:** ${report.generatedAt}`);
   lines.push(`- **Region:** ${REGION_LABELS[report.region]}`);
   lines.push(`- **Profile:** ${report.profileLabel}`);
-  lines.push(
-    `- **Engine:** ${report.usingNativeModule ? 'native SDK' : 'simulated'}`,
-  );
+  lines.push(`- **Engine:** ${report.mode}`);
   lines.push(`- **Trust score:** ${assessment.score} / 100`);
   lines.push(`- **Risk level:** ${assessment.level}`);
   lines.push('');

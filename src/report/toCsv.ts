@@ -18,7 +18,7 @@ export function toCsv(report: FullReport): string {
     `# generatedAt,${report.generatedAt}`,
     `# region,${report.region}`,
     `# profile,${report.profileLabel}`,
-    `# engine,${report.usingNativeModule ? 'native' : 'simulated'}`,
+    `# engine,${report.mode}`,
     `# trustScore,${report.assessment.score}`,
     `# riskLevel,${report.assessment.level}`,
     `# activeThreats,${report.assessment.threats.length}`,

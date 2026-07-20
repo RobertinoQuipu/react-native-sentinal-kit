@@ -1,4 +1,4 @@
-import SecurityKit from '../SecurityKit';
+import SecurityKit, {ScanMode} from '../SecurityKit';
 import {assessRegion, RegionAssessment} from '../providers/registry';
 import {Region} from '../providers/types';
 import {SecurityReport} from '../types';
@@ -6,31 +6,39 @@ import {SecurityReport} from '../types';
 export interface FullReport {
   generatedAt: string;
   region: Region;
+  /** -1 when scanning a real device; 0..N when a simulation profile is used. */
   profileIndex: number;
   profileLabel: string;
   usingNativeModule: boolean;
+  mode: ScanMode;
   base: SecurityReport;
   assessment: RegionAssessment;
 }
 
 /**
  * Runs a complete scan for a region and returns an aggregated report object.
- * Works both inside React Native (native SDKs when linked) and in Node
- * (JS simulation engine).
+ *
+ * - Omit `profileIndex` to scan the REAL device (native module or live
+ *   on-device signals such as jail-monkey). This is what apps should use.
+ * - Pass `profileIndex` (0..N) to force a simulated device profile, used by
+ *   the demo CLI and for testing.
  */
 export async function generateReport(options: {
   region: Region;
   profileIndex?: number;
 }): Promise<FullReport> {
-  const profileIndex = options.profileIndex ?? 0;
-  SecurityKit.setSimulationProfile(profileIndex);
+  const simulate = typeof options.profileIndex === 'number';
+  const profileIndex = simulate ? (options.profileIndex as number) : -1;
+
+  SecurityKit.setSimulationProfile(simulate ? profileIndex : null);
 
   const base = await SecurityKit.scan();
   const assessment = await assessRegion(options.region, base, profileIndex);
 
   const profiles = SecurityKit.getSimulationProfiles();
-  const profileLabel =
-    profiles[Math.min(profileIndex, profiles.length - 1)]?.label ?? 'unknown';
+  const profileLabel = simulate
+    ? profiles[Math.min(profileIndex, profiles.length - 1)]?.label ?? 'unknown'
+    : `Live device (${SecurityKit.mode})`;
 
   return {
     generatedAt: new Date().toISOString(),
@@ -38,6 +46,7 @@ export async function generateReport(options: {
     profileIndex,
     profileLabel,
     usingNativeModule: SecurityKit.usingNativeModule,
+    mode: SecurityKit.mode,
     base,
     assessment,
   };

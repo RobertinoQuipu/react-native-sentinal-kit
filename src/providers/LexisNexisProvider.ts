@@ -78,14 +78,16 @@ export const LexisNexisProvider: SecurityProvider = {
       };
     }
 
-    // Simulated ThreatMetrix decision from base signals.
+    // Derived ThreatMetrix decision from real base signals (used when the
+    // native TMX SDK is not linked).
     const {device, network, runtime} = ctx.base;
+    const riskFactors =
+      (device.rooted || device.jailbroken ? 1 : 0) +
+      (device.emulator || device.simulator ? 1 : 0) +
+      (network.vpn || network.proxy ? 1 : 0) +
+      (runtime.hookDetected || runtime.debuggerAttached ? 1 : 0);
     const rating =
-      ctx.profileIndex >= 2
-        ? 'high'
-        : ctx.profileIndex === 1
-        ? 'medium'
-        : 'trusted';
+      riskFactors >= 2 ? 'high' : riskFactors === 1 ? 'medium' : 'trusted';
     const highRisk = rating === 'high' || rating === 'medium';
     return {
       id: 'lexisnexis',

@@ -8,7 +8,7 @@ import {SIMULATION_PROFILES} from './simulation';
 interface CliOptions {
   region: Region;
   format: ReportFormat;
-  profileIndex: number;
+  profileIndex: number | null;
   outPath?: string;
   print: boolean;
 }
@@ -55,6 +55,10 @@ function parseArgs(argv: string[]): CliOptions {
         opts.profileIndex = v;
         break;
       }
+      case '--live':
+      case '-l':
+        opts.profileIndex = null;
+        break;
       case '--out':
       case '-o':
         opts.outPath = next();
@@ -95,6 +99,8 @@ Options:
                                        0 = Clean device
                                        1 = Developer / emulator
                                        2 = Compromised device
+  -l, --live                         Scan the REAL device instead of a profile
+                                       (uses native module / on-device libs)
   -o, --out <path>                   Output file path (default: auto-named in CWD)
       --print                        Also print the report to stdout
   -h, --help                         Show this help
@@ -106,7 +112,9 @@ async function main(): Promise<void> {
 
   const report = await generateReport({
     region: opts.region,
-    profileIndex: opts.profileIndex,
+    ...(opts.profileIndex === null
+      ? {}
+      : {profileIndex: opts.profileIndex}),
   });
 
   const written = writeReportToFile(report, opts.format, opts.outPath);
@@ -118,7 +126,7 @@ async function main(): Promise<void> {
   console.log(`\nSecurityKit report`);
   console.log(`  Region:      ${REGION_LABELS[report.region]}`);
   console.log(`  Profile:     ${report.profileLabel}`);
-  console.log(`  Engine:      ${report.usingNativeModule ? 'native' : 'simulated'}`);
+  console.log(`  Engine:      ${report.mode}`);
   console.log(`  Trust score: ${report.assessment.score}/100 (${report.assessment.level})`);
   console.log(`  Threats:     ${report.assessment.threats.length}`);
   console.log(`  Written to:  ${written}\n`);

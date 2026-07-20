@@ -89,10 +89,21 @@ export const IBMTrusteerProvider: SecurityProvider = {
       };
     }
 
-    // Simulated Trusteer assessment from base signals.
+    // Derived Trusteer assessment from real base signals (used when the
+    // Trusteer Mobile SDK is not linked). Risk score is computed from the
+    // actual device/runtime/network/privacy findings.
     const {device, runtime, privacy, network} = ctx.base;
-    const riskScore =
-      ctx.profileIndex >= 2 ? 720 : ctx.profileIndex === 1 ? 380 : 90;
+    const rat = network.proxy && privacy.screenRecording;
+    const riskScore = Math.min(
+      1000,
+      (device.rooted || device.jailbroken ? 400 : 0) +
+        (runtime.suspiciousLibraries.length > 0 ? 300 : 0) +
+        (rat ? 250 : 0) +
+        (device.emulator || device.simulator ? 150 : 0) +
+        (privacy.overlayDetected ? 120 : 0) +
+        (runtime.hookDetected ? 120 : 0) +
+        (network.vpn ? 60 : 0),
+    );
     return {
       id: 'trusteer',
       name: 'IBM Security Trusteer',
@@ -105,7 +116,7 @@ export const IBMTrusteerProvider: SecurityProvider = {
           runtime.suspiciousLibraries.length > 0,
           50,
         ),
-        sig('rat', 'Remote access tool (RAT)', network.proxy && privacy.screenRecording, 40),
+        sig('rat', 'Remote access tool (RAT)', rat, 40),
         sig('emulator', 'Emulator', device.emulator || device.simulator, 15),
         sig('rooted', 'Rooted / jailbroken', device.rooted || device.jailbroken, 40),
         sig('overlay', 'Screen overlay', privacy.overlayDetected, 20),
