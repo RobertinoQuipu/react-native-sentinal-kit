@@ -29,6 +29,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node -e \"const f='lib/cli.js',s=require('fs');s.writeFileSync(f,'#!/usr/bin/env node\\n'+s.readFileSync(f,'utf8'));s.chmodSync(f,0o755)\"",
     "prepublishOnly": "yarn build",
+    "prepare": "yarn build",
     "typecheck": "tsc --noEmit",
     "report": "tsx src/cli.ts",
     "clean": "rm -rf lib"
