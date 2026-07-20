@@ -27,7 +27,6 @@ local.properties
 .haste_cache/
 
 # Build output
-lib/
 *.tsbuildinfo
 
 # Generated reports
