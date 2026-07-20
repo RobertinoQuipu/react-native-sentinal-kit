@@ -1,0 +1,62 @@
+{
+  "name": "react-native-security-kit",
+  "version": "1.0.0",
+  "description": "Layered device-security scanning for React Native with region-specific threat-intelligence providers (JailMonkey, LexisNexis ThreatMetrix, IBM Trusteer). Generates CSV / Markdown reports.",
+  "keywords": [
+    "react-native",
+    "security",
+    "jailbreak",
+    "root-detection",
+    "jailmonkey",
+    "threatmetrix",
+    "trusteer",
+    "fraud",
+    "device-intelligence"
+  ],
+  "license": "MIT",
+  "main": "lib/index.js",
+  "module": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "securitykit-report": "lib/cli.js"
+  },
+  "files": [
+    "lib",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node -e \"const f='lib/cli.js',s=require('fs');s.writeFileSync(f,'#!/usr/bin/env node\\n'+s.readFileSync(f,'utf8'));s.chmodSync(f,0o755)\"",
+    "prepublishOnly": "yarn build",
+    "typecheck": "tsc --noEmit",
+    "report": "tsx src/cli.ts",
+    "clean": "rm -rf lib"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "jail-monkey": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.6",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "tsx": "^4.7.0",
+    "typescript": "5.0.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

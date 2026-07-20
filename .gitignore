@@ -1,0 +1,40 @@
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Xcode
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+ios/Pods/
+ios/build/
+*.xcworkspace/xcuserdata/
+
+# Android
+.gradle/
+android/app/build/
+android/build/
+android/.idea/
+*.keystore
+!debug.keystore
+local.properties
+
+# Metro
+.metro-health-check*
+.haste_cache/
+
+# Build output
+lib/
+*.tsbuildinfo
+
+# Generated reports
+securitykit-*.csv
+securitykit-*.md
+
+# Misc
+.DS_Store
+*.log
+.env
