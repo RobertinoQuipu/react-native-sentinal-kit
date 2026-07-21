@@ -1,4 +1,5 @@
 import {NativeModules} from '../platform';
+import {getConfig, httpJson, HttpError} from '../net';
 import {ProviderContext, ProviderResult, SecurityProvider} from './types';
 
 /**
@@ -59,6 +60,22 @@ interface TrusteerNativeModule {
 
 const Native: TrusteerNativeModule | undefined = NativeModules.IBMTrusteer;
 
+/**
+ * Modeled Trusteer assess response. Field names are based on public docs and
+ * MAY need tenant-specific adjustment for your Trusteer deployment.
+ */
+interface TrusteerApiResponse {
+  riskScore: number;
+  malwareDetected?: boolean;
+  rat?: boolean;
+  emulator?: boolean;
+  rooted?: boolean;
+  overlayDetected?: boolean;
+  accessibilityRisk?: boolean;
+  vpn?: boolean;
+  recommendations?: string[];
+}
+
 export const IBMTrusteerProvider: SecurityProvider = {
   id: 'trusteer',
   name: 'IBM Security Trusteer',
@@ -87,6 +104,66 @@ export const IBMTrusteerProvider: SecurityProvider = {
           sig('call', 'Call in progress (social eng.)', res.callInProgress, 15),
         ],
       };
+    }
+
+    // Direct vendor REST call (only when sandbox is disabled and a configured
+    // endpoint + credentials are present).
+    const cfg = getConfig();
+    const trusteer = cfg.trusteer;
+    if (cfg.sandbox === false && trusteer?.baseUrl && trusteer.apiKey) {
+      try {
+        const res = await httpJson<TrusteerApiResponse>({
+          url: trusteer.baseUrl,
+          method: 'POST',
+          headers: {Authorization: `Bearer ${trusteer.apiKey}`},
+          body: {
+            customerId: trusteer.customerId,
+            deviceContext: ctx.base,
+          },
+          timeoutMs: cfg.timeoutMs,
+          retries: cfg.retries,
+        });
+        return {
+          id: 'trusteer',
+          name: 'IBM Security Trusteer',
+          native: true,
+          signals: [
+            sig(
+              'riskScore',
+              `Risk score: ${res.riskScore}/1000`,
+              res.riskScore >= 500,
+              45,
+            ),
+            sig('malware', 'Malware detected', res.malwareDetected ?? false, 50),
+            sig('rat', 'Remote access tool (RAT)', res.rat ?? false, 40),
+            sig('emulator', 'Emulator', res.emulator ?? false, 15),
+            sig('rooted', 'Rooted / jailbroken', res.rooted ?? false, 40),
+            sig('overlay', 'Screen overlay', res.overlayDetected ?? false, 20),
+            sig(
+              'a11y',
+              'Accessibility abuse',
+              res.accessibilityRisk ?? false,
+              25,
+            ),
+            sig('vpn', 'VPN in use', res.vpn ?? false, 10),
+            sig(
+              'call',
+              'Call in progress (social eng.)',
+              (res.recommendations?.length ?? 0) > 0,
+              15,
+            ),
+          ],
+        };
+      } catch (err) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            '[IBMTrusteerProvider] Trusteer REST call failed, falling back to simulated assessment:',
+            err instanceof HttpError ? `HTTP ${err.status}` : err,
+          );
+        }
+        // Fall through to the simulated assessment below.
+      }
     }
 
     // Derived Trusteer assessment from real base signals (used when the

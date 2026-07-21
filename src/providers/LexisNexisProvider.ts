@@ -1,4 +1,5 @@
 import {NativeModules} from '../platform';
+import {getConfig, httpJson, HttpError} from '../net';
 import {ProviderContext, ProviderResult, SecurityProvider} from './types';
 
 /**
@@ -46,6 +47,20 @@ interface TmxNativeModule {
 const Native: TmxNativeModule | undefined =
   NativeModules.LexisNexisThreatMetrix;
 
+/**
+ * Modeled ThreatMetrix session-query response. Field names are based on public
+ * docs and MAY need tenant-specific adjustment for your TMX policy.
+ */
+interface TmxApiResponse {
+  risk_rating: 'trusted' | 'neutral' | 'medium' | 'high';
+  reasons?: string[];
+  device_id?: string;
+  vpn?: boolean;
+  proxy?: boolean;
+  tor?: boolean;
+  emulator?: boolean;
+}
+
 export const LexisNexisProvider: SecurityProvider = {
   id: 'lexisnexis',
   name: 'LexisNexis ThreatMetrix',
@@ -76,6 +91,52 @@ export const LexisNexisProvider: SecurityProvider = {
           ),
         ],
       };
+    }
+
+    // Direct vendor REST call (only when sandbox is disabled and a configured
+    // endpoint + credentials are present).
+    const cfg = getConfig();
+    const tmx = cfg.threatmetrix;
+    if (cfg.sandbox === false && tmx?.baseUrl && tmx.apiKey) {
+      try {
+        const sessionId = `mdl-${Date.now()}`;
+        const res = await httpJson<TmxApiResponse>({
+          url: tmx.baseUrl,
+          method: 'POST',
+          body: {
+            org_id: tmx.orgId,
+            api_key: tmx.apiKey,
+            session_id: sessionId,
+            service_type: 'session-policy',
+          },
+          timeoutMs: cfg.timeoutMs,
+          retries: cfg.retries,
+        });
+        const highRisk =
+          res.risk_rating === 'high' || res.risk_rating === 'medium';
+        return {
+          id: 'lexisnexis',
+          name: 'LexisNexis ThreatMetrix',
+          native: true,
+          signals: [
+            sig('riskRating', `Risk rating: ${res.risk_rating}`, highRisk, 45),
+            sig('vpn', 'VPN detected', res.vpn ?? false, 10),
+            sig('proxy', 'Proxy detected', res.proxy ?? false, 12),
+            sig('tor', 'TOR exit node', res.tor ?? false, 25),
+            sig('emulator', 'Emulator', res.emulator ?? false, 15),
+            ...(res.reasons ?? []).map((r, i) => sig(`reason-${i}`, r, true, 8)),
+          ],
+        };
+      } catch (err) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            '[LexisNexisProvider] ThreatMetrix REST call failed, falling back to simulated decision:',
+            err instanceof HttpError ? `HTTP ${err.status}` : err,
+          );
+        }
+        // Fall through to the simulated decision below.
+      }
     }
 
     // Derived ThreatMetrix decision from real base signals (used when the
