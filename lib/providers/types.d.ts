@@ -20,6 +20,8 @@ export interface ProviderSignal {
     weight: number;
     detail?: string;
 }
+/** Shared helper to build a ProviderSignal. */
+export declare function signal(key: string, label: string, flagged: boolean, weight: number, detail?: string): ProviderSignal;
 export interface ProviderResult {
     id: ProviderId;
     name: string;
@@ -43,8 +45,6 @@ export interface ProviderContext {
     region: Region;
     /** The base on-device report from the core SecurityKit scan. */
     base: SecurityReport;
-    /** Demo-only: which simulation profile is active (0 = clean). */
-    profileIndex: number;
 }
 export declare const REGION_PROVIDERS: Record<Region, ProviderId[]>;
 export declare const REGION_LABELS: Record<Region, string>;

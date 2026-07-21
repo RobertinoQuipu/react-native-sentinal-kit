@@ -32,10 +32,9 @@ export interface RegionAssessment {
 export async function assessRegion(
   region: Region,
   base: SecurityReport,
-  profileIndex: number,
 ): Promise<RegionAssessment> {
   const ids = REGION_PROVIDERS[region];
-  const ctx: ProviderContext = {region, base, profileIndex};
+  const ctx: ProviderContext = {region, base};
 
   const providers = await Promise.all(
     ids.map(id => REGISTRY[id].evaluate(ctx)),

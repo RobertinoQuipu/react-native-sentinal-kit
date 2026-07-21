@@ -1,4 +1,4 @@
-import {NativeModules, Platform} from './platform';
+import {NativeModules, Platform, isDev} from './platform';
 import {ThreatScore} from './ThreatScore';
 import {SIMULATION_PROFILES, SimulationProfile} from './simulation';
 import {collectLiveReport, hasLiveSignals} from './deviceCollector';
@@ -136,12 +136,7 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const isDev =
-  typeof __DEV__ !== 'undefined'
-    ? __DEV__
-    : process?.env?.NODE_ENV !== 'production';
-
-if (!isNativeModuleAvailable() && isDev) {
+if (!isNativeModuleAvailable() && isDev()) {
   // eslint-disable-next-line no-console
   console.info(
     `[SecurityKit] ${LINKING_ERROR} Falling back to JS simulation engine.`,

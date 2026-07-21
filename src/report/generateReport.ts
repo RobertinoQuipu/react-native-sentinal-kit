@@ -9,7 +9,6 @@ export interface FullReport {
   /** -1 when scanning a real device; 0..N when a simulation profile is used. */
   profileIndex: number;
   profileLabel: string;
-  usingNativeModule: boolean;
   mode: ScanMode;
   base: SecurityReport;
   assessment: RegionAssessment;
@@ -33,7 +32,7 @@ export async function generateReport(options: {
   SecurityKit.setSimulationProfile(simulate ? profileIndex : null);
 
   const base = await SecurityKit.scan();
-  const assessment = await assessRegion(options.region, base, profileIndex);
+  const assessment = await assessRegion(options.region, base);
 
   const profiles = SecurityKit.getSimulationProfiles();
   const profileLabel = simulate
@@ -45,7 +44,6 @@ export async function generateReport(options: {
     region: options.region,
     profileIndex,
     profileLabel,
-    usingNativeModule: SecurityKit.usingNativeModule,
     mode: SecurityKit.mode,
     base,
     assessment,

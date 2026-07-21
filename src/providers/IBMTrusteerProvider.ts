@@ -1,46 +1,22 @@
-import {NativeModules} from '../platform';
+import {NativeModules, isDev} from '../platform';
 import {getConfig, httpJson, HttpError} from '../net';
-import {ProviderContext, ProviderResult, SecurityProvider} from './types';
+import {
+  ProviderContext,
+  ProviderResult,
+  SecurityProvider,
+  signal as sig,
+} from './types';
 
 /**
- * IBM Security Trusteer provider — engaged for the MACEDONIA region.
- *
+ * IBM Security Trusteer provider (MACEDONIA).
  * Source: https://www.ibm.com/products/trusteer
  *
- * IBM Trusteer is a family of cloud services + endpoint SDKs that use
- * cloud intelligence, AI and ML to assess risk, detect fraud, establish
- * identity and authenticate users. Product family:
- *   - Trusteer Pinpoint Detect  (account takeover, behavioral biometrics)
- *   - Trusteer Pinpoint Assure  (new/guest identity risk)
- *   - Trusteer Mobile           (real-time device hygiene + session risk)  <-- used here
- *   - Trusteer Rapport          (malware / phishing remediation)
+ * Resolution order: native module -> direct REST call (when sandbox is off and
+ * configured) -> simulated assessment derived from the base report.
  *
- * Multilayered risk assessment (per IBM): Device, Network, User biometrics,
- * Account data, Global intelligence. The Device layer checks spoofing/
- * abnormalities, malware, emulators, screen overlays and remote access tools;
- * the Network layer checks location, carrier/hosting and VPN usage. A unique
- * persistent device fingerprint spans a network of millions of devices across
- * 190 countries.
- *
- * In production you embed the Trusteer Mobile SDK and expose it to JS via a
- * native module named `IBMTrusteer`.
- *
- * Expected native interface (implement in Kotlin/Swift):
- *   assess(customerId): Promise<{
- *     riskScore: number,            // 0-1000, higher = riskier
- *     deviceFingerprint: string,    // persistent device id
- *     malwareDetected: boolean,
- *     rat: boolean,                 // remote access tool
- *     emulator: boolean,
- *     rooted: boolean,
- *     overlayDetected: boolean,
- *     vpn: boolean,
- *     callInProgress: boolean,      // social-engineering signal
- *     recommendations: string[],
- *   }>
- *
- * Falls back to a synthesized assessment from the base report when the native
- * module is not linked.
+ * Native module `IBMTrusteer.assess({customerId})` should resolve to a device
+ * risk assessment (riskScore 0-1000, malware, rat, emulator, rooted, overlay,
+ * vpn, callInProgress, recommendations).
  */
 
 interface TrusteerNativeModule {
@@ -110,7 +86,7 @@ export const IBMTrusteerProvider: SecurityProvider = {
     // endpoint + credentials are present).
     const cfg = getConfig();
     const trusteer = cfg.trusteer;
-    if (cfg.sandbox === false && trusteer?.baseUrl && trusteer.apiKey) {
+    if (!cfg.sandbox && trusteer?.baseUrl && trusteer.apiKey) {
       try {
         const res = await httpJson<TrusteerApiResponse>({
           url: trusteer.baseUrl,
@@ -155,7 +131,7 @@ export const IBMTrusteerProvider: SecurityProvider = {
           ],
         };
       } catch (err) {
-        if (__DEV__) {
+        if (isDev()) {
           // eslint-disable-next-line no-console
           console.warn(
             '[IBMTrusteerProvider] Trusteer REST call failed, falling back to simulated assessment:',
@@ -201,13 +177,7 @@ export const IBMTrusteerProvider: SecurityProvider = {
           runtime.suspiciousLibraries.length > 0,
           50,
         ),
-        {
-          key: 'rat',
-          label: 'Remote access tool (RAT)',
-          flagged: rat,
-          weight: 40,
-          detail: ratApps || undefined,
-        },
+        sig('rat', 'Remote access tool (RAT)', rat, 40, ratApps || undefined),
         sig('emulator', 'Emulator', device.emulator || device.simulator, 15),
         sig('rooted', 'Rooted / jailbroken', device.rooted || device.jailbroken, 40),
         sig('overlay', 'Screen overlay', overlay, 20),
@@ -218,7 +188,3 @@ export const IBMTrusteerProvider: SecurityProvider = {
     };
   },
 };
-
-function sig(key: string, label: string, flagged: boolean, weight: number) {
-  return {key, label, flagged, weight};
-}

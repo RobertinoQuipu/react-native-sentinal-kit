@@ -20,4 +20,6 @@ interface PlatformLike {
 }
 export declare const NativeModules: Record<string, any>;
 export declare const Platform: PlatformLike;
+/** True in development. Safe in both React Native (__DEV__) and Node. */
+export declare function isDev(): boolean;
 export {};

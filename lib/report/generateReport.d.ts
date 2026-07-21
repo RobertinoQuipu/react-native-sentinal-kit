@@ -8,7 +8,6 @@ export interface FullReport {
     /** -1 when scanning a real device; 0..N when a simulation profile is used. */
     profileIndex: number;
     profileLabel: string;
-    usingNativeModule: boolean;
     mode: ScanMode;
     base: SecurityReport;
     assessment: RegionAssessment;

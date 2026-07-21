@@ -44,3 +44,10 @@ const shim = load();
 
 export const NativeModules = shim.NativeModules;
 export const Platform = shim.Platform;
+
+/** True in development. Safe in both React Native (__DEV__) and Node. */
+export function isDev(): boolean {
+  return typeof __DEV__ !== 'undefined'
+    ? !!__DEV__
+    : process?.env?.NODE_ENV !== 'production';
+}

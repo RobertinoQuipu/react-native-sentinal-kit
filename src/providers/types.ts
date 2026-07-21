@@ -24,6 +24,17 @@ export interface ProviderSignal {
   detail?: string;
 }
 
+/** Shared helper to build a ProviderSignal. */
+export function signal(
+  key: string,
+  label: string,
+  flagged: boolean,
+  weight: number,
+  detail?: string,
+): ProviderSignal {
+  return {key, label, flagged, weight, detail};
+}
+
 export interface ProviderResult {
   id: ProviderId;
   name: string;
@@ -49,8 +60,6 @@ export interface ProviderContext {
   region: Region;
   /** The base on-device report from the core SecurityKit scan. */
   base: SecurityReport;
-  /** Demo-only: which simulation profile is active (0 = clean). */
-  profileIndex: number;
 }
 
 export const REGION_PROVIDERS: Record<Region, ProviderId[]> = {

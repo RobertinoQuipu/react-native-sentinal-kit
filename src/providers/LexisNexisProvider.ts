@@ -1,39 +1,24 @@
-import {NativeModules} from '../platform';
+import {NativeModules, isDev} from '../platform';
 import {getConfig, httpJson, HttpError} from '../net';
-import {ProviderContext, ProviderResult, SecurityProvider} from './types';
+import {
+  ProviderContext,
+  ProviderResult,
+  SecurityProvider,
+  signal as sig,
+} from './types';
 
 /**
- * LexisNexis ThreatMetrix provider — engaged for the MOLDOVA region.
+ * LexisNexis ThreatMetrix provider (MOLDOVA).
  *
- * NOTE ON SOURCES: the provided URL
- *   https://www.lexisnexis.com/supportandtraining/lexis-create/b/resources/
- *   posts/lexis-create-plus-install-guide
- * documents "Lexis Create+", the Microsoft Word legal-drafting add-in — NOT
- * the mobile device-intelligence product. That page only links a PDF
- * (LexisCreate+_InstallGuide_2025.pdf) with no inline SDK steps.
+ * Resolution order: native module -> direct REST call (when sandbox is off and
+ * configured) -> simulated decision derived from the base report.
  *
- * For mobile fraud / device intelligence you integrate the LexisNexis Risk
- * Solutions "ThreatMetrix" (TMX) Mobile SDK, which profiles the session and
- * returns a risk decision from the LexisNexis backend. Expose it to JS via a
- * native module named `LexisNexisThreatMetrix`.
- *
- * Expected native interface (implement in Kotlin/Swift):
- *   profile(orgId, sessionId): Promise<{
- *     riskRating: 'trusted' | 'neutral' | 'medium' | 'high',
- *     reasons: string[],
- *     deviceId: string,
- *     vpn: boolean, proxy: boolean, tor: boolean, emulator: boolean,
- *   }>
- *
- * When the native module is absent we synthesize an equivalent decision from
- * the base report so the demo remains runnable.
+ * Native module `LexisNexisThreatMetrix.profile({orgId, sessionId})` should
+ * resolve to { riskRating, reasons, deviceId, vpn, proxy, tor, emulator }.
  */
 
 interface TmxNativeModule {
-  profile(config: {
-    orgId: string;
-    sessionId: string;
-  }): Promise<{
+  profile(config: {orgId: string; sessionId: string}): Promise<{
     riskRating: 'trusted' | 'neutral' | 'medium' | 'high';
     reasons: string[];
     deviceId: string;
@@ -97,7 +82,7 @@ export const LexisNexisProvider: SecurityProvider = {
     // endpoint + credentials are present).
     const cfg = getConfig();
     const tmx = cfg.threatmetrix;
-    if (cfg.sandbox === false && tmx?.baseUrl && tmx.apiKey) {
+    if (!cfg.sandbox && tmx?.baseUrl && tmx.apiKey) {
       try {
         const sessionId = `mdl-${Date.now()}`;
         const res = await httpJson<TmxApiResponse>({
@@ -128,7 +113,7 @@ export const LexisNexisProvider: SecurityProvider = {
           ],
         };
       } catch (err) {
-        if (__DEV__) {
+        if (isDev()) {
           // eslint-disable-next-line no-console
           console.warn(
             '[LexisNexisProvider] ThreatMetrix REST call failed, falling back to simulated decision:',
@@ -165,7 +150,3 @@ export const LexisNexisProvider: SecurityProvider = {
     };
   },
 };
-
-function sig(key: string, label: string, flagged: boolean, weight: number) {
-  return {key, label, flagged, weight};
-}

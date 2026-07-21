@@ -1,4 +1,9 @@
-import {ProviderContext, ProviderResult, SecurityProvider} from './types';
+import {
+  ProviderContext,
+  ProviderResult,
+  SecurityProvider,
+  signal as sig,
+} from './types';
 
 /**
  * JailMonkey on-device root/jailbreak detection.
@@ -83,7 +88,3 @@ export const JailMonkeyProvider: SecurityProvider = {
     };
   },
 };
-
-function sig(key: string, label: string, flagged: boolean, weight: number) {
-  return {key, label, flagged, weight};
-}

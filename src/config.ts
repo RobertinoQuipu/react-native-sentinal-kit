@@ -1,3 +1,5 @@
+import {isDev} from './platform';
+
 export type VendorId = 'threatmetrix' | 'trusteer';
 
 export interface VendorEndpointConfig {
@@ -21,21 +23,18 @@ const DEFAULT_CONFIG: SecurityKitConfig = {
   retries: 2,
 };
 
-let currentConfig: SecurityKitConfig = { ...DEFAULT_CONFIG };
-
-const isDev: boolean =
-  typeof __DEV__ !== 'undefined'
-    ? Boolean(__DEV__)
-    : process?.env?.NODE_ENV !== 'production';
+let currentConfig: SecurityKitConfig = {...DEFAULT_CONFIG};
 
 export function configure(partial: Partial<SecurityKitConfig>): void {
-  if (partial.sandbox === false && isDev) {
+  if (partial.sandbox === false && isDev()) {
     // eslint-disable-next-line no-console
     console.warn(
-      '[react-native-security-kit] sandbox mode disabled. Shipping vendor API keys in a mobile app is insecure; prefer proxying vendor calls through your own backend.',
+      '[react-native-security-kit] sandbox disabled. Shipping vendor API keys ' +
+        'in a mobile app is insecure; prefer proxying vendor calls through your ' +
+        'own backend.',
     );
   }
-  currentConfig = { ...currentConfig, ...partial };
+  currentConfig = {...currentConfig, ...partial};
 }
 
 export function getConfig(): SecurityKitConfig {
@@ -43,5 +42,5 @@ export function getConfig(): SecurityKitConfig {
 }
 
 export function resetConfig(): void {
-  currentConfig = { ...DEFAULT_CONFIG };
+  currentConfig = {...DEFAULT_CONFIG};
 }
