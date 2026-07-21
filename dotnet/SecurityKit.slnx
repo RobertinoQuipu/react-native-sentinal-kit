@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/samples/">
-    <Project Path="samples/SecurityKit.Sample/SecurityKit.Sample.csproj" />
-  </Folder>
-  <Folder Name="/src/">
-    <Project Path="src/SecurityKit.Vendors/SecurityKit.Vendors.csproj" />
-  </Folder>
-</Solution>
