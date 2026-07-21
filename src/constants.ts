@@ -26,6 +26,10 @@ export const THREAT_WEIGHTS = {
   appAttestFailed: 25,
   screenRecording: 10,
   overlayDetected: 20,
+  remoteAccessAppInstalled: 20,
+  remoteAccessAppActive: 45,
+  accessibilityRisk: 25,
+  screenCaptured: 15,
 } as const;
 
 /**
@@ -53,6 +57,10 @@ export const THREAT_LABELS: Record<string, string> = {
   appAttestFailed: 'App Attest check failed',
   screenRecording: 'Screen recording in progress',
   overlayDetected: 'Screen overlay detected',
+  remoteAccessAppInstalled: 'Remote-access app installed',
+  remoteAccessAppActive: 'Remote-access app active',
+  accessibilityRisk: 'Accessibility abuse risk',
+  screenCaptured: 'Screen is being captured',
 };
 
 export function riskLevelForScore(score: number): RiskLevel {

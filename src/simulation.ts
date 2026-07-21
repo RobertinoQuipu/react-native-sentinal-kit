@@ -4,6 +4,7 @@ import {
   IntegrityReport,
   NetworkReport,
   PrivacyReport,
+  RemoteAccessReport,
   RuntimeReport,
 } from './types';
 
@@ -21,6 +22,7 @@ export interface SimulationProfile {
   network: NetworkReport;
   integrity: IntegrityReport;
   privacy: PrivacyReport;
+  remoteAccess: RemoteAccessReport;
 }
 
 const isIOS = Platform.OS === 'ios';
@@ -56,6 +58,13 @@ export const SIMULATION_PROFILES: SimulationProfile[] = [
       screenRecording: false,
       overlayDetected: false,
     },
+    remoteAccess: {
+      remoteAccessApps: [],
+      overlayDetected: false,
+      accessibilityRisk: false,
+      screenCaptured: false,
+      debuggerAttached: false,
+    },
   },
   {
     label: 'Developer / emulator',
@@ -86,6 +95,20 @@ export const SIMULATION_PROFILES: SimulationProfile[] = [
       screenshotBlocked: false,
       screenRecording: false,
       overlayDetected: false,
+    },
+    remoteAccess: {
+      remoteAccessApps: [
+        {
+          name: 'TeamViewer QuickSupport',
+          installed: true,
+          active: false,
+          confidence: 0.85,
+        },
+      ],
+      overlayDetected: false,
+      accessibilityRisk: false,
+      screenCaptured: false,
+      debuggerAttached: true,
     },
   },
   {
@@ -119,6 +142,26 @@ export const SIMULATION_PROFILES: SimulationProfile[] = [
       screenshotBlocked: false,
       screenRecording: true,
       overlayDetected: true,
+    },
+    remoteAccess: {
+      remoteAccessApps: [
+        {
+          name: 'AnyDesk',
+          installed: true,
+          active: true,
+          confidence: 0.95,
+        },
+        {
+          name: 'TeamViewer QuickSupport',
+          installed: true,
+          active: false,
+          confidence: 0.85,
+        },
+      ],
+      overlayDetected: true,
+      accessibilityRisk: true,
+      screenCaptured: true,
+      debuggerAttached: true,
     },
   },
 ];

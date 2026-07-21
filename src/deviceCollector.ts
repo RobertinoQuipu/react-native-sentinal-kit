@@ -1,9 +1,10 @@
-import {Platform} from './platform';
+import {NativeModules, Platform} from './platform';
 import {
   DeviceReport,
   IntegrityReport,
   NetworkReport,
   PrivacyReport,
+  RemoteAccessReport,
   RuntimeReport,
   SecurityReport,
 } from './types';
@@ -39,6 +40,16 @@ interface JailMonkeyApi {
 interface DeviceInfoApi {
   isEmulator(): Promise<boolean>;
   isEmulatorSync?(): boolean;
+}
+
+/**
+ * Optional native module for remote-access / overlay / accessibility detection.
+ * Real RAT detection (installed app scan, overlay & accessibility-service
+ * abuse) requires platform code; expose a native module named
+ * `SecurityKitRemoteAccess` implementing this to get live values.
+ */
+interface RemoteAccessNativeModule {
+  getRemoteAccessReport(): Promise<RemoteAccessReport>;
 }
 
 /**
@@ -159,9 +170,44 @@ export async function collectLiveReport(): Promise<SecurityReport> {
     overlayDetected: false,
   };
 
-  const partial = {device, runtime, network, integrity, privacy};
+  // ---- Remote access / overlay / accessibility -----------------------------
+  const remoteAccess = await collectRemoteAccess({
+    debuggerAttached: debugged,
+    screenCaptured: privacy.screenRecording,
+    overlayDetected: privacy.overlayDetected,
+  });
+
+  const partial = {device, runtime, network, integrity, privacy, remoteAccess};
   const risk = ThreatScore.calculate(partial);
   return {...partial, risk};
+}
+
+async function collectRemoteAccess(derived: {
+  debuggerAttached: boolean;
+  screenCaptured: boolean;
+  overlayDetected: boolean;
+}): Promise<RemoteAccessReport> {
+  const native = NativeModules?.SecurityKitRemoteAccess as
+    | RemoteAccessNativeModule
+    | undefined;
+
+  if (native && typeof native.getRemoteAccessReport === 'function') {
+    try {
+      return await native.getRemoteAccessReport();
+    } catch {
+      // fall through to derived values
+    }
+  }
+
+  // Without the native module we can only report what JS can observe.
+  // Installed-RAT scanning and overlay/accessibility abuse need native code.
+  return {
+    remoteAccessApps: [],
+    overlayDetected: derived.overlayDetected,
+    accessibilityRisk: false,
+    screenCaptured: derived.screenCaptured,
+    debuggerAttached: derived.debuggerAttached,
+  };
 }
 
 function safe<T>(fn: () => T, fallback: T): T {

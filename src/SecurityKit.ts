@@ -90,8 +90,16 @@ class SecurityKitImpl {
     this.lastMode = 'simulated';
     await delay(300);
 
-    const {device, runtime, network, integrity, privacy} = this.activeProfile;
-    const partial = {device, runtime, network, integrity, privacy};
+    const {device, runtime, network, integrity, privacy, remoteAccess} =
+      this.activeProfile;
+    const partial = {
+      device,
+      runtime,
+      network,
+      integrity,
+      privacy,
+      remoteAccess,
+    };
     const risk = ThreatScore.calculate(partial);
 
     return {...partial, risk};

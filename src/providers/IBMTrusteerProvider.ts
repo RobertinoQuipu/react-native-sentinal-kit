@@ -92,18 +92,26 @@ export const IBMTrusteerProvider: SecurityProvider = {
     // Derived Trusteer assessment from real base signals (used when the
     // Trusteer Mobile SDK is not linked). Risk score is computed from the
     // actual device/runtime/network/privacy findings.
-    const {device, runtime, privacy, network} = ctx.base;
-    const rat = network.proxy && privacy.screenRecording;
+    const {device, runtime, privacy, network, remoteAccess} = ctx.base;
+    const activeRat = remoteAccess.remoteAccessApps.some(a => a.active);
+    const installedRat = remoteAccess.remoteAccessApps.some(a => a.installed);
+    const rat =
+      activeRat || (network.proxy && privacy.screenRecording) || false;
+    const overlay = privacy.overlayDetected || remoteAccess.overlayDetected;
     const riskScore = Math.min(
       1000,
       (device.rooted || device.jailbroken ? 400 : 0) +
         (runtime.suspiciousLibraries.length > 0 ? 300 : 0) +
-        (rat ? 250 : 0) +
+        (activeRat ? 350 : installedRat ? 150 : 0) +
         (device.emulator || device.simulator ? 150 : 0) +
-        (privacy.overlayDetected ? 120 : 0) +
+        (overlay ? 120 : 0) +
+        (remoteAccess.accessibilityRisk ? 150 : 0) +
         (runtime.hookDetected ? 120 : 0) +
         (network.vpn ? 60 : 0),
     );
+    const ratApps = remoteAccess.remoteAccessApps
+      .map(a => a.name)
+      .join(', ');
     return {
       id: 'trusteer',
       name: 'IBM Security Trusteer',
@@ -116,10 +124,17 @@ export const IBMTrusteerProvider: SecurityProvider = {
           runtime.suspiciousLibraries.length > 0,
           50,
         ),
-        sig('rat', 'Remote access tool (RAT)', rat, 40),
+        {
+          key: 'rat',
+          label: 'Remote access tool (RAT)',
+          flagged: rat,
+          weight: 40,
+          detail: ratApps || undefined,
+        },
         sig('emulator', 'Emulator', device.emulator || device.simulator, 15),
         sig('rooted', 'Rooted / jailbroken', device.rooted || device.jailbroken, 40),
-        sig('overlay', 'Screen overlay', privacy.overlayDetected, 20),
+        sig('overlay', 'Screen overlay', overlay, 20),
+        sig('a11y', 'Accessibility abuse', remoteAccess.accessibilityRisk, 25),
         sig('vpn', 'VPN in use', network.vpn, 10),
         sig('call', 'Call in progress (social eng.)', false, 15),
       ],

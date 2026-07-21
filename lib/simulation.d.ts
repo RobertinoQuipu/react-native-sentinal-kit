@@ -1,4 +1,4 @@
-import { DeviceReport, IntegrityReport, NetworkReport, PrivacyReport, RuntimeReport } from './types';
+import { DeviceReport, IntegrityReport, NetworkReport, PrivacyReport, RemoteAccessReport, RuntimeReport } from './types';
 /**
  * A deterministic-ish simulated signal source used when the native module
  * is not linked (e.g. running the JS-only demo, tests, or web).
@@ -13,5 +13,6 @@ export interface SimulationProfile {
     network: NetworkReport;
     integrity: IntegrityReport;
     privacy: PrivacyReport;
+    remoteAccess: RemoteAccessReport;
 }
 export declare const SIMULATION_PROFILES: SimulationProfile[];

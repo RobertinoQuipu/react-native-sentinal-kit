@@ -56,6 +56,24 @@ function baseRows(report: FullReport): Row[] {
   add('Privacy', 'Screen recording', privacy.screenRecording);
   add('Privacy', 'Overlay detected', privacy.overlayDetected);
 
+  const ra = report.base.remoteAccess;
+  add('RemoteAccess', 'Debugger attached', ra.debuggerAttached);
+  add('RemoteAccess', 'Screen captured', ra.screenCaptured);
+  add('RemoteAccess', 'Overlay detected', ra.overlayDetected);
+  add('RemoteAccess', 'Accessibility risk', ra.accessibilityRisk);
+  if (ra.remoteAccessApps.length === 0) {
+    add('RemoteAccess', 'Remote-access apps', false);
+  } else {
+    for (const app of ra.remoteAccessApps) {
+      add(
+        'RemoteAccess',
+        `RAT: ${app.name}`,
+        app.installed || app.active,
+        `${app.active ? 'active' : 'installed'}, confidence ${app.confidence}`,
+      );
+    }
+  }
+
   return rows;
 }
 

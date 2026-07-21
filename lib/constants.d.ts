@@ -25,6 +25,10 @@ export declare const THREAT_WEIGHTS: {
     readonly appAttestFailed: 25;
     readonly screenRecording: 10;
     readonly overlayDetected: 20;
+    readonly remoteAccessAppInstalled: 20;
+    readonly remoteAccessAppActive: 45;
+    readonly accessibilityRisk: 25;
+    readonly screenCaptured: 15;
 };
 /**
  * Human-readable labels for each threat, surfaced in RiskReport.threats.

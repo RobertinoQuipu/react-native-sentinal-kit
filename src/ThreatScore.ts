@@ -23,7 +23,8 @@ export class ThreatScore {
       }
     };
 
-    const {device, runtime, network, integrity, privacy} = report;
+    const {device, runtime, network, integrity, privacy, remoteAccess} =
+      report;
 
     if (device.rooted) penalize(THREAT_WEIGHTS.rooted, 'rooted');
     if (device.jailbroken) penalize(THREAT_WEIGHTS.jailbroken, 'jailbroken');
@@ -66,6 +67,22 @@ export class ThreatScore {
       penalize(THREAT_WEIGHTS.screenRecording, 'screenRecording');
     if (privacy.overlayDetected)
       penalize(THREAT_WEIGHTS.overlayDetected, 'overlayDetected');
+
+    if (remoteAccess.overlayDetected && !privacy.overlayDetected)
+      penalize(THREAT_WEIGHTS.overlayDetected, 'overlayDetected');
+    if (remoteAccess.accessibilityRisk)
+      penalize(THREAT_WEIGHTS.accessibilityRisk, 'accessibilityRisk');
+    if (remoteAccess.screenCaptured && !privacy.screenRecording)
+      penalize(THREAT_WEIGHTS.screenCaptured, 'screenCaptured');
+    remoteAccess.remoteAccessApps.forEach(app => {
+      if (app.active) {
+        score -= THREAT_WEIGHTS.remoteAccessAppActive;
+        threats.push(`Remote-access app active: ${app.name}`);
+      } else if (app.installed) {
+        score -= THREAT_WEIGHTS.remoteAccessAppInstalled;
+        threats.push(`Remote-access app installed: ${app.name}`);
+      }
+    });
 
     const clamped = Math.max(0, Math.min(100, score));
 

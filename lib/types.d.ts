@@ -35,6 +35,28 @@ export interface PrivacyReport {
     screenRecording: boolean;
     overlayDetected: boolean;
 }
+/** A remote-access / screen-sharing app detected on the device. */
+export interface RemoteAccessApp {
+    name: string;
+    /** The app is installed on the device. */
+    installed: boolean;
+    /** The app appears to be actively running / sharing the screen. */
+    active: boolean;
+    /** Detection confidence, 0..1. */
+    confidence: number;
+}
+/**
+ * Remote-access, overlay and screen-capture signals — the classic vectors for
+ * social-engineering fraud (RAT tools, screen sharing, tap-jacking overlays,
+ * accessibility abuse).
+ */
+export interface RemoteAccessReport {
+    remoteAccessApps: RemoteAccessApp[];
+    overlayDetected: boolean;
+    accessibilityRisk: boolean;
+    screenCaptured: boolean;
+    debuggerAttached: boolean;
+}
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export interface RiskReport {
     score: number;
@@ -47,6 +69,7 @@ export interface SecurityReport {
     network: NetworkReport;
     integrity: IntegrityReport;
     privacy: PrivacyReport;
+    remoteAccess: RemoteAccessReport;
     risk: RiskReport;
 }
 /**
